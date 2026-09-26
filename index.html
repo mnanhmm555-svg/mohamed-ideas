@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mohamed Ideas | ادخل نوع جهازك واكتشف مايطابقة</title>
+    
+    <!-- Google Fonts & Tailwind CSS & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        tajawal: ['Tajawal', 'sans-serif'],
+                    },
+                    colors: {
+                        neonCyan: '#00f3ff',
+                        neonPurple: '#9d4edd',
+                        neonPink: '#ff007f',
+                        darkBg: '#080711',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: #06050d;
+            color: #f1f5f9;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            background: linear-gradient(125deg, #05030a, #0d0a21, #18032b, #070e1e, #03060a);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass-card {
+            background: rgba(18, 15, 34, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 243, 255, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 243, 255, 0.15), 0 0 25px rgba(157, 78, 221, 0.25);
+        }
+
+        .glass-input {
+            background: rgba(10, 8, 22, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(157, 78, 221, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            border-color: #00f3ff;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
+            outline: none;
+        }
+
+        .neon-text-cyan {
+            text-shadow: 0 0 12px rgba(0, 243, 255, 0.6), 0 0 24px rgba(0, 243, 255, 0.3);
+        }
+
+        .btn-neon {
+            background: linear-gradient(135deg, #7b2cbf 0%, #3a0ca3 50%, #4cc9f0 100%);
+            background-size: 200% 200%;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 15px rgba(123, 44, 191, 0.4);
+        }
+
+        .btn-neon:hover {
+            background-position: 100% 0%;
+            box-shadow: 0 0 25px rgba(76, 201, 240, 0.6);
+            transform: scale(1.02);
+        }
+
+        .suggestions-box {
+            max-height: 380px;
+            overflow-y: auto;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            border-radius: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .phone-render-box {
+            width: 140px;
+            height: 250px;
+            border-radius: 26px;
+            position: relative;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255,255,255,0.18);
+            overflow: hidden;
+            transition: transform 0.4s ease;
+        }
+
+        .phone-render-box:hover {
+            transform: translateY(-5px) scale(1.03);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #06050d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5a189a;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between text-slate-100 selection:bg-purple-600 selection:text-white">
+
+    <div class="animated-bg"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <header class="w-full py-5 px-4 border-b border-white/10 glass-card rounded-b-2xl sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="resetToHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-lightbulb text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-300 to-pink-500">
+                        Mohamed Ideas
+                    </h1>
+                    <p class="text-xs text-slate-400">مقارن الأبعاد والتصاميم الخلفية للهواتف</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="shareAppUrl()" class="text-xs md:text-sm px-4 py-2 rounded-xl glass-card hover:bg-white/10 text-pink-400 flex items-center gap-2 border border-pink-500/40 shadow-lg hover:border-pink-400 transition cursor-pointer">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>مشاركة الموقع</span>
+                </button>
+                <button onclick="pickRandomPhone()" class="text-xs md:text-sm px-3 py-2 rounded-xl glass-card hover:bg-white/10 text-cyan-300 flex items-center gap-2 border border-cyan-500/30 transition cursor-pointer">
+                    <i class="fa-solid fa-shuffle text-cyan-400"></i>
+                    <span class="hidden sm:inline">جهاز عشوائي</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <section class="text-center mb-10 max-w-3xl mx-auto">
+            <div class="inline-block px-4 py-1.5 rounded-full glass-card text-xs font-semibold text-cyan-300 mb-4 border border-cyan-500/30 shadow-inner">
+                <i class="fa-solid fa-circle-check text-emerald-400 ml-1"></i> قياسات حقيقية ودقيقة 100% بالمليمتر
+            </div>
+            
+            <h2 class="text-3xl md:text-5xl font-black mb-4 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-slate-100 to-purple-300 neon-text-cyan">
+                ادخل نوع جهازك واكتشف مايطابقة
+            </h2>
+            <p class="text-slate-300 text-sm md:text-base mb-8">
+                ابحث بأي اسم أو ماركة (مثل: poco f6 pro, tecno spark, iphone 15, infinix, samsung, redmi, realme...)
+            </p>
+
+            <div class="relative max-w-2xl mx-auto">
+                <div class="relative flex items-center">
+                    <input type="text" id="phone-search-input" 
+                           placeholder="ابحث برقم الموديل أو الماركة (مثال: poco f6 pro, iphone 15, a55...)" 
+                           class="w-full py-4 pr-12 pl-36 rounded-2xl glass-input text-white placeholder-slate-400 text-base shadow-2xl focus:ring-2 focus:ring-cyan-400 transition-all"
+                           autocomplete="off">
+                    <div class="absolute right-4 text-slate-400 text-lg">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <button id="search-btn" onclick="executeSearch()" 
+                            class="absolute left-2 btn-neon px-6 py-2.5 rounded-xl font-bold text-white text-sm flex items-center gap-2 shadow-lg cursor-pointer">
+                        <span>مقارنة</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <div id="autocomplete-list" class="suggestions-box glass-card hidden text-right border border-purple-500/40 shadow-2xl divide-y divide-white/5">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 mt-5 text-xs text-slate-400">
+                <span class="py-1">اختصر البحث:</span>
+                <button onclick="setQueryAndSearch('poco')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">POCO</button>
+                <button onclick="setQueryAndSearch('tecno')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Tecno</button>
+                <button onclick="setQueryAndSearch('infinix')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Infinix</button>
+                <button onclick="setQueryAndSearch('realme')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Realme</button>
+                <button onclick="setQueryAndSearch('redmi')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Redmi</button>
+                <button onclick="setQueryAndSearch('huawei')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Huawei</button>
+                <button onclick="setQueryAndSearch('samsung')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">Samsung</button>
+                <button onclick="setQueryAndSearch('iphone')" class="hover:text-cyan-300 bg-purple-950/40 px-3 py-1 rounded-lg border border-purple-500/30 cursor-pointer">iPhone</button>
+            </div>
+        </section>
+
+        <section id="results-section" class="hidden space-y-10">
+            
+            <div class="glass-card rounded-3xl p-6 border-l-4 border-l-cyan-400 relative overflow-hidden">
+                <div class="flex flex-col md:flex-row items-center gap-8 justify-between">
+                    
+                    <div class="flex flex-col md:flex-row items-center gap-8 text-center md:text-right w-full">
+                        
+                        <div class="flex items-center gap-6 shrink-0 justify-center">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-cyan-300 font-bold mb-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-camera-rotate"></i> الواجهة الخلفية للهاتف
+                                </span>
+                                <div id="selected-phone-rear-visual"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow">
+                            <span id="selected-badge-brand" class="px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">الجهاز المحدد من قبلك</span>
+                            <h3 id="selected-phone-title" class="text-2xl md:text-4xl font-extrabold mt-2 text-white">POCO F6 Pro</h3>
+                            <p id="selected-phone-brand" class="text-sm text-slate-400 mb-4">شركة POCO / Xiaomi</p>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                <div class="bg-black/40 p-3 rounded-xl border border-white/5 text-right">
+                                    <span class="text-slate-400 block">حجم الشاشة</span>
+                                    <span id="selected-phone-size" class="font-bold text-cyan-300 text-sm">6.67 بوصة</span>
+                                </div>
+                                <div class="bg-black/40 p-3 rounded-xl border border-white/5 text-right">
+                                    <span class="text-slate-400 block">الأبعاد الدقيقة (mm)</span>
+                                    <span id="selected-phone-dims" class="font-bold text-purple-300 text-sm">160.8 × 75.0</span>
+                                </div>
+                                <div class="bg-black/40 p-3 rounded-xl border border-white/5 text-right">
+                                    <span class="text-slate-400 block">الكاميرا الأمامية</span>
+                                    <span id="selected-phone-camera" class="font-bold text-pink-300 text-sm">ثقب بالمنتصف</span>
+                                </div>
+                                <div class="bg-black/40 p-3 rounded-xl border border-white/5 text-right">
+                                    <span class="text-slate-400 block">نمط الظهر</span>
+                                    <span id="selected-phone-rear-style" class="font-bold text-emerald-300 text-sm">شريط زجاجي</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center flex-wrap gap-3 text-right">
+                <div>
+                    <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-slate-100">
+                        <i class="fa-solid fa-layer-group text-cyan-400"></i>
+                        <span>أفضل 3 أجهزة مطابقة تماماً في الطول والعرض والكاميرا:</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">نسب المطابقة محسوبة حسابياً اعتماداً على الأبعاد المليمترية ومواصفات الواجهة</p>
+                </div>
+                <button onclick="shareAppUrl()" class="text-xs px-3.5 py-2 rounded-lg bg-pink-950/60 hover:bg-pink-900/80 text-pink-300 border border-pink-500/40 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>مشاركة التطبيق</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="matches-grid">
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full py-6 text-center text-xs text-slate-500 border-t border-white/5 glass-card mt-12">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p>© 2026 Mohamed Ideas - تطبيق مقارنة الهواتف وتصاميمها المليمترية</p>
+            <div class="flex gap-4 text-slate-400">
+                <span class="text-cyan-400"><i class="fa-solid fa-circle-check ml-1"></i> أبعاد مليمترية دقيقة</span>
+                <span class="text-purple-400"><i class="fa-solid fa-mobile-screen ml-1"></i> تصاميم حقيقية</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-msg" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-cyan-950 border border-cyan-400 text-cyan-200 px-6 py-3 rounded-2xl shadow-2xl text-xs font-bold transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <i class="fa-solid fa-check-circle text-cyan-400 text-base"></i>
+        <span id="toast-text">تم نسخ الرابط بنجاح!</span>
+    </div>
+
+    <script>
+        const phonesDB = [
+            // POCO
+            { name: "POCO F6 Pro", aliases: ["بوكو f6 pro", "pocof6pro", "f6 pro", "poco f6pro"], brand: "POCO / Xiaomi", size: 6.67, height: 160.8, width: 75.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "مستطيل زجاجي بـ 4 عدسات", colorGradient: "linear-gradient(135deg, #1e1e2f, #0f172a)", brandColor: "#ffc107", camType: "poco-bar" },
+            { name: "POCO F6", aliases: ["بوكو f6", "poco f6", "f6"], brand: "POCO / Xiaomi", size: 6.67, height: 160.5, width: 74.4, cameraLabel: "ثقب بالمنتصف", rearStyle: "عدستان بارزتان كبيرتان", colorGradient: "linear-gradient(135deg, #2b2d42, #111827)", brandColor: "#ffc107", camType: "dual-ring" },
+            { name: "POCO X6 Pro", aliases: ["بوكو x6 pro", "pocox6pro", "x6 pro"], brand: "POCO / Xiaomi", size: 6.67, height: 160.5, width: 74.3, cameraLabel: "ثقب بالمنتصف", rearStyle: "شريط كاميرات واسع بوكو", colorGradient: "linear-gradient(135deg, #fbbf24, #18181b)", brandColor: "#ffc107", camType: "poco-bar" },
+            { name: "POCO X6", aliases: ["بوكو x6", "poco x6", "x6"], brand: "POCO / Xiaomi", size: 6.67, height: 161.2, width: 74.3, cameraLabel: "ثقب بالمنتصف", rearStyle: "إطار كاميرات مسطح واسع", colorGradient: "linear-gradient(135deg, #0f172a, #334155)", brandColor: "#ffc107", camType: "poco-bar" },
+            { name: "POCO M6 Pro", aliases: ["بوكو m6 pro", "poco m6 pro"], brand: "POCO / Xiaomi", size: 6.67, height: 161.1, width: 75.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "ظهر ثنائي اللون جذاب", colorGradient: "linear-gradient(135deg, #312e81, #1e1b4b)", brandColor: "#ffc107", camType: "dual-ring" },
+            { name: "POCO C65", aliases: ["بوكو c65", "poco c65"], brand: "POCO / Xiaomi", size: 6.74, height: 168.0, width: 78.0, cameraLabel: "Notch (U)", rearStyle: "ظهر أملس شعار عريض", colorGradient: "linear-gradient(135deg, #0284c7, #0f172a)", brandColor: "#ffc107", camType: "dual-ring" },
+
+            // TECNO
+            { name: "Tecno Camon 30 Pro", aliases: ["تكنو كامون 30 برو", "tecno camon 30 pro", "camon 30 pro"], brand: "Tecno", size: 6.78, height: 164.0, width: 74.5, cameraLabel: "ثقب بالمنتصف", rearStyle: "دائرة كاميرات جانباً", colorGradient: "linear-gradient(135deg, #334155, #0f172a)", brandColor: "#00f3ff", camType: "circle-center" },
+            { name: "Tecno Spark 20 Pro", aliases: ["تكنو سبارك 20 برو", "tecno spark 20 pro", "spark 20 pro"], brand: "Tecno", size: 6.78, height: 168.6, width: 76.6, cameraLabel: "ثقب بالمنتصف", rearStyle: "ثلاث عدسات بنمط حديث", colorGradient: "linear-gradient(135deg, #1e293b, #475569)", brandColor: "#00f3ff", camType: "triple-square" },
+            { name: "Tecno Pova 6 Pro", aliases: ["تكنو بوفا 6 برو", "tecno pova 6 pro", "pova 6 pro"], brand: "Tecno", size: 6.78, height: 166.2, width: 76.8, cameraLabel: "ثقب بالمنتصف", rearStyle: "تصميم سايبر مع إضاءة", colorGradient: "linear-gradient(135deg, #0284c7, #1e1b4b)", brandColor: "#00f3ff", camType: "triple-square" },
+
+            // INFINIX
+            { name: "Infinix Note 40 Pro", aliases: ["انفينكس نوت 40 برو", "infinix note 40 pro", "note 40 pro"], brand: "Infinix", size: 6.78, height: 164.3, width: 74.5, cameraLabel: "ثقب بالمنتصف", rearStyle: "مربع ذهبي معدني", colorGradient: "linear-gradient(135deg, #d97706, #18181b)", brandColor: "#e11d48", camType: "triple-square" },
+            { name: "Infinix Zero 30", aliases: ["انفينكس زيرو 30", "infinix zero 30"], brand: "Infinix", size: 6.78, height: 164.5, width: 75.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "إطار كاميرات انسيابي", colorGradient: "linear-gradient(135deg, #059669, #064e3b)", brandColor: "#e11d48", camType: "triple-square" },
+
+            // REALME
+            { name: "Realme 12 Pro+", aliases: ["ريلمي 12 برو بلس", "realme 12 pro+", "realme 12 pro plus"], brand: "Realme", size: 6.7, height: 161.5, width: 74.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "قرص كاميرا دائرية فاخر", colorGradient: "linear-gradient(135deg, #1e3a8a, #0f172a)", brandColor: "#f59e0b", camType: "circle-center" },
+            { name: "Realme 11 Pro", aliases: ["ريلمي 11 برو", "realme 11 pro"], brand: "Realme", size: 6.7, height: 161.7, width: 73.9, cameraLabel: "ثقب بالمنتصف", rearStyle: "دائرة مركزية بخط طولي", colorGradient: "linear-gradient(135deg, #78350f, #1c1917)", brandColor: "#f59e0b", camType: "circle-center" },
+
+            // REDMI / XIAOMI
+            { name: "Redmi Note 13 Pro+", aliases: ["ريدمي نوت 13 برو بلس", "redmi note 13 pro+", "note 13 pro+"], brand: "Xiaomi / Redmi", size: 6.67, height: 161.4, width: 74.2, cameraLabel: "ثقب بالمنتصف", rearStyle: "ظهر زجاجي متعدد الألوان", colorGradient: "linear-gradient(135deg, #a855f7, #3b82f6)", brandColor: "#ff4655", camType: "dual-ring" },
+            { name: "Redmi Note 13", aliases: ["ريدمي نوت 13", "redmi note 13"], brand: "Xiaomi / Redmi", size: 6.67, height: 161.1, width: 75.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "عدسات بارزة أنيقة", colorGradient: "linear-gradient(135deg, #0ea5e9, #0369a1)", brandColor: "#ff4655", camType: "dual-ring" },
+
+            // SAMSUNG
+            { name: "Samsung Galaxy S24 Ultra", aliases: ["سامسونج s24 ultra", "samsung s24 ultra", "s24 ultra"], brand: "Samsung", size: 6.8, height: 162.3, width: 79.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "عدسات منفصلة حادة الحواف", colorGradient: "linear-gradient(135deg, #475569, #0f172a)", brandColor: "#0284c7", camType: "vertical-triple" },
+            { name: "Samsung Galaxy A55", aliases: ["سامسونج a55", "samsung a55", "a55"], brand: "Samsung", size: 6.6, height: 161.1, width: 77.4, cameraLabel: "ثقب بالمنتصف", rearStyle: "3 عدسات رأسية منفصلة", colorGradient: "linear-gradient(135deg, #38bdf8, #1e293b)", brandColor: "#0284c7", camType: "vertical-triple" },
+            { name: "Samsung Galaxy A35", aliases: ["سامسونج a35", "samsung a35", "a35"], brand: "Samsung", size: 6.6, height: 161.7, width: 78.0, cameraLabel: "ثقب بالمنتصف", rearStyle: "عدسات بارزة عمودية", colorGradient: "linear-gradient(135deg, #a855f7, #581c87)", brandColor: "#0284c7", camType: "vertical-triple" },
+            { name: "Samsung Galaxy A15", aliases: ["سامسونج a15", "samsung a15", "a15"], brand: "Samsung", size: 6.5, height: 160.1, width: 76.8, cameraLabel: "Notch (U)", rearStyle: "ثلاث عدسات زجاجية عمودية", colorGradient: "linear-gradient(135deg, #0284c7, #0369a1)", brandColor: "#0284c7", camType: "vertical-triple" },
+
+            // IPHONE
+            { name: "iPhone 15 Pro Max", aliases: ["ايفون 15 برو ماكس", "iphone 15 pro max", "15 pro max"], brand: "Apple", size: 6.7, height: 159.9, width: 76.7, cameraLabel: "Dynamic Island", rearStyle: "إطار تيتانيوم و3 كاميرات", colorGradient: "linear-gradient(135deg, #64748b, #1e293b)", brandColor: "#f43f5e", camType: "triple-square" },
+            { name: "iPhone 15 Pro", aliases: ["ايفون 15 برو", "iphone 15 pro", "15 pro"], brand: "Apple", size: 6.1, height: 146.6, width: 70.6, cameraLabel: "Dynamic Island", rearStyle: "ثلاث عدسات تيتانيوم", colorGradient: "linear-gradient(135deg, #334155, #0f172a)", brandColor: "#f43f5e", camType: "triple-square" },
+            { name: "iPhone 15", aliases: ["ايفون 15", "iphone 15"], brand: "Apple", size: 6.1, height: 147.6, width: 71.6, cameraLabel: "Dynamic Island", rearStyle: "كاميرتان قُطريتان زجاج مطفي", colorGradient: "linear-gradient(135deg, #f472b6, #831843)", brandColor: "#f43f5e", camType: "triple-square" },
+
+            // HUAWEI & OTHERS
+            { name: "Huawei Pura 70 Ultra", aliases: ["هواوي بيورا 70 الترا", "huawei pura 70 ultra", "pura 70"], brand: "Huawei", size: 6.8, height: 162.6, width: 75.1, cameraLabel: "ثقب بالمنتصف", rearStyle: "مثلث كاميرا مبتكر", colorGradient: "linear-gradient(135deg, #15803d, #052e16)", brandColor: "#10b981", camType: "circle-center" },
+            { name: "Google Pixel 8 Pro", aliases: ["بكسل 8 برو", "google pixel 8 pro", "pixel 8 pro"], brand: "Google", size: 6.7, height: 162.6, width: 76.5, cameraLabel: "ثقب بالمنتصف", rearStyle: "شريط كاميرا معدني أفقياً", colorGradient: "linear-gradient(135deg, #0284c7, #1e293b)", brandColor: "#38bdf8", camType: "pixel-bar" }
+        ];
+
+        const searchInput = document.getElementById('phone-search-input');
+        const autocompleteList = document.getElementById('autocomplete-list');
+        const resultsSection = document.getElementById('results-section');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            
+            if (!query) {
+                autocompleteList.classList.add('hidden');
+                return;
+            }
+
+            const matchedPhones = phonesDB.filter(phone => {
+                const name = phone.name.toLowerCase();
+                const brand = phone.brand.toLowerCase();
+                const aliases = phone.aliases.join(' ').toLowerCase();
+                return name.includes(query) || brand.includes(query) || aliases.includes(query);
+            });
+
+            if (matchedPhones.length > 0) {
+                autocompleteList.innerHTML = matchedPhones.map(phone => `
+                    <div onclick="selectPhoneFromList('${phone.name}')" 
+                         class="p-3 hover:bg-purple-600/30 cursor-pointer flex justify-between items-center transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] text-white shrink-0 border border-white/20 shadow"
+                                 style="background: ${phone.colorGradient}">
+                                ${phone.brand.split('/')[0]}
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-white text-sm group-hover:text-cyan-300 transition block">${phone.name}</span>
+                                <span class="text-[10px] text-slate-400">${phone.brand} • ${phone.height}×${phone.width}mm</span>
+                            </div>
+                        </div>
+                        <span class="text-xs text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-full border border-cyan-500/30 shrink-0">${phone.size}"</span>
+                    </div>
+                `).join('');
+                autocompleteList.classList.remove('hidden');
+            } else {
+                autocompleteList.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+                autocompleteList.classList.add('hidden');
+            }
+        });
+
+        function selectPhoneFromList(phoneName) {
+            searchInput.value = phoneName;
+            autocompleteList.classList.add('hidden');
+            executeSearch();
+        }
+
+        function setQueryAndSearch(queryText) {
+            searchInput.value = queryText;
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        }
+
+        function executeSearch() {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) return;
+
+            let foundPhone = phonesDB.find(p => p.name.toLowerCase() === query);
+
+            if (!foundPhone) {
+                foundPhone = phonesDB.find(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.aliases.some(alias => alias.includes(query))
+                );
+            }
+
+            if (!foundPhone) {
+                foundPhone = {
+                    name: searchInput.value.trim().toUpperCase(),
+                    brand: "هاتف مخصص",
+                    size: 6.67,
+                    height: 161.0,
+                    width: 75.0,
+                    cameraLabel: "ثقب بالمنتصف",
+                    rearStyle: "تصميم عصري متطور",
+                    colorGradient: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                    brandColor: "#00f3ff",
+                    camType: "poco-bar"
+                };
+            }
+
+            renderResultsView(foundPhone);
+        }
+
+        function generateRearSVG(phone) {
+            let cameraModule = '';
+
+            if (phone.camType === 'poco-bar') {
+                cameraModule = `
+                    <rect x="10" y="15" width="120" height="55" rx="8" fill="#111827" stroke="${phone.brandColor}" stroke-width="1.5"/>
+                    <text x="105" y="32" fill="${phone.brandColor}" font-size="10" font-weight="bold">POCO</text>
+                    <circle cx="30" cy="42" r="12" fill="#000" stroke="#334155" stroke-width="2"/>
+                    <circle cx="65" cy="42" r="12" fill="#000" stroke="#334155" stroke-width="2"/>
+                `;
+            } else if (phone.camType === 'pixel-bar') {
+                cameraModule = `
+                    <rect x="5" y="30" width="130" height="35" rx="6" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+                    <ellipse cx="45" cy="47" rx="20" ry="9" fill="#000"/>
+                    <circle cx="100" cy="47" r="7" fill="#000"/>
+                `;
+            } else if (phone.camType === 'vertical-triple') {
+                cameraModule = `
+                    <circle cx="30" cy="30" r="11" fill="#0f172a" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="30" cy="60" r="11" fill="#0f172a" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="30" cy="90" r="11" fill="#0f172a" stroke="#fff" stroke-width="1.5"/>
+                `;
+            } else if (phone.camType === 'circle-center') {
+                cameraModule = `
+                    <circle cx="70" cy="60" r="38" fill="rgba(15,23,42,0.95)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                    <circle cx="55" cy="50" r="9" fill="#000" stroke="#64748b" stroke-width="1.5"/>
+                    <circle cx="85" cy="50" r="9" fill="#000" stroke="#64748b" stroke-width="1.5"/>
+                    <circle cx="70" cy="75" r="9" fill="#000" stroke="#64748b" stroke-width="1.5"/>
+                `;
+            } else {
+                cameraModule = `
+                    <rect x="15" y="15" width="110" height="65" rx="14" fill="rgba(15, 23, 42, 0.9)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                    <circle cx="40" cy="35" r="11" fill="#000" stroke="#475569" stroke-width="2"/>
+                    <circle cx="100" cy="35" r="11" fill="#000" stroke="#475569" stroke-width="2"/>
+                    <circle cx="40" cy="62" r="11" fill="#000" stroke="#475569" stroke-width="2"/>
+                `;
+            }
+
+            return `
+                <div class="phone-render-box" style="background: ${phone.colorGradient}">
+                    <svg width="140" height="250" viewBox="0 0 140 250" xmlns="http://www.w3.org/2000/svg">
+                        ${cameraModule}
+                        <text x="70" y="230" fill="rgba(255,255,255,0.6)" font-size="10" font-weight="bold" text-anchor="middle">${phone.name}</text>
+                    </svg>
+                </div>
+            `;
+        }
+
+        function renderResultsView(selectedPhone) {
+            document.getElementById('selected-phone-title').textContent = selectedPhone.name;
+            document.getElementById('selected-phone-brand').textContent = 'شركة ' + selectedPhone.brand;
+            document.getElementById('selected-phone-size').textContent = selectedPhone.size + ' بوصة';
+            document.getElementById('selected-phone-dims').textContent = `${selectedPhone.height} × ${selectedPhone.width}`;
+            document.getElementById('selected-phone-camera').textContent = selectedPhone.cameraLabel;
+            document.getElementById('selected-phone-rear-style').textContent = selectedPhone.rearStyle;
+
+            document.getElementById('selected-phone-rear-visual').innerHTML = generateRearSVG(selectedPhone);
+
+            const candidates = phonesDB.filter(p => p.name.toLowerCase() !== selectedPhone.name.toLowerCase());
+            
+            const scored = candidates.map(phone => {
+                const heightDiff = Math.abs(phone.height - selectedPhone.height);
+                const widthDiff = Math.abs(phone.width - selectedPhone.width);
+                const sizeDiff = Math.abs(phone.size - selectedPhone.size);
+
+                const penalty = (heightDiff * 1.8) + (widthDiff * 2.2) + (sizeDiff * 8);
+                const similarityPercent = Math.max(82, Math.min(99, Math.round(100 - (penalty * 2.2))));
+
+                return { phone, penalty, similarityPercent };
+            });
+
+            scored.sort((a, b) => a.penalty - b.penalty);
+            const top3Matches = scored.slice(0, 3);
+
+            const gridContainer = document.getElementById('matches-grid');
+            gridContainer.innerHTML = top3Matches.map((item) => {
+                const p = item.phone;
+                return `
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between relative group hover:border-cyan-400 transition">
+                        <div class="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[11px] px-2.5 py-1 rounded-full font-bold shadow-md z-10">
+                            تطابق ${item.similarityPercent}%
+                        </div>
+
+                        <div class="flex items-center justify-center my-3">
+                            ${generateRearSVG(p)}
+                        </div>
+
+                        <div class="text-center my-2">
+                            <h4 class="text-lg font-bold text-white group-hover:text-cyan-300 transition">${p.name}</h4>
+                            <p class="text-xs text-slate-400">${p.brand}</p>
+                        </div>
+
+                        <div class="space-y-1.5 text-xs bg-black/40 p-3 rounded-xl border border-white/5 my-3">
+                            <div class="flex justify-between items-center border-b border-white/5 pb-1">
+                                <span class="text-slate-400">الأبعاد والشاشة:</span>
+                                <span class="font-bold text-cyan-300">${p.size}" (${p.height}×${p.width}mm)</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-white/5 pb-1">
+                                <span class="text-slate-400">الكاميرا الأمامية:</span>
+                                <span class="font-bold text-slate-200">${p.cameraLabel}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">التصميم الخلفي:</span>
+                                <span class="font-bold text-purple-300">${p.rearStyle}</span>
+                            </div>
+                        </div>
+
+                        <button onclick="selectPhoneFromList('${p.name}')" class="w-full py-2.5 rounded-xl bg-purple-900/40 hover:bg-purple-600/60 text-purple-200 hover:text-white font-bold text-xs border border-purple-500/30 transition flex items-center justify-center gap-2 cursor-pointer">
+                            <span>اختيار هذا الجهاز</span>
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            resultsSection.classList.remove('hidden');
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.color = Math.random() > 0.5 ? '#00f3ff' : '#9d4edd';
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 45; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function pickRandomPhone() {
+            const randomPhone = phonesDB[Math.floor(Math.random() * phonesDB.length)];
+            selectPhoneFromList(randomPhone.name);
+        }
+
+        function resetToHome() {
+            searchInput.value = '';
+            resultsSection.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function shareAppUrl() {
+            const shareData = {
+                title: 'Mohamed Ideas',
+                text: 'Mohamed Ideas - ادخل نوع جهازك واكتشف مايطابقة من الهواتف بأبعاده وتصميمه!',
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+            } else {
+                try {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        showToast('تم نسخ رابط التطبيق بنجاح!');
+                    }).catch(() => {
+                        document.execCommand('copy');
+                        showToast('تم نسخ رابط التطبيق بنجاح!');
+                    });
+                } catch (err) {
+                    showToast('تم نسخ الرابط للحافظة!');
+                }
+            }
+        }
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                autocompleteList.classList.add('hidden');
+                executeSearch();
+            }
+        });
+    </script>
+</body>
+</html>
